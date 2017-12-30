@@ -22,11 +22,3 @@ function copyToClipboard() {
     console.log("copy was " + msg);
     document.body.removeChild(dummy);
 }
-
-
-javascript: (
-    function () {
-        var a = document.createElement('script');
-        a.setAttribute('src', '//loligit.github.io/panda/panda.js?' + Date.parse(new Date()));
-        document.body.appendChild(a);
-    }());

@@ -69,7 +69,7 @@ function panda_listshow() {
     var panda_filefrom = (!panda_filepick.split(',')[0] || panda_filepick.split(',')[0] == 0) ? 1 : parseInt(panda_filepick.split(',')[0]);
     var panda_filefinl = (!panda_filepick.split(',')[1] || panda_filepick.split(',')[1] == 0) ? parseInt(panda_filenavi[3]) : parseInt(panda_filepick.split(',')[1]);
     if (!panda_filefrom || !panda_filefinl || panda_filefrom > panda_filefinl || panda_filefrom < 1 || panda_filefinl > parseInt(panda_filenavi[3])) { alert(panda_lang_a003); return; };
-    var panda_fileorig = confirm(panda_lang_c003);
+    var panda_fileorig = false; //confirm(panda_lang_c003);
     var panda_pageconf = document.getElementsByClassName('ths');
     var panda_pagetote = parseInt(panda_pageconf[0].innerHTML) * (panda_pageconf[1].innerHTML == 'Normal' ? 10 : 5);
     var panda_pagefrom = Math.ceil(panda_filefrom / panda_pagetote);
