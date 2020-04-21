@@ -383,7 +383,7 @@ if (document.location.href.indexOf('https://exhentai.org/g/') > -1) {
     document.body.scrollTop = 0
     document.documentElement.scrollTop = 0
     initStyleLink()
-    Promise.all(xhrlist).then(initImageStructure)
+    Promise.all(xhrlist).then(initImageStructure())
     // initImageStructure()
     initToolBarStructure()
     reframeWebpage()
