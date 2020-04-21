@@ -73,7 +73,7 @@ function loadImg(pageurl, i, first) {
             var img = document.getElementById('img' + i)
             if (first) {
                 var h = document.createElement('hr')
-                h.setAttribute('style', 'width:100%;height:8px;background-color:'+color+';margin:0px;')
+                h.setAttribute('style', 'width:100%;height:8px;background-color:' + color + ';margin:0px;')
                 img.parentElement.insertBefore(h, img)
             }
             img.setAttribute('src', imgUrl)
@@ -182,7 +182,7 @@ function initImageStructure() {
         window.reader.page[i] = {}
         window.reader.image[i] = {}
         window.reader.page[i].url = pics_links[i].href
-        
+
         // 生成 image dom, 加到 readerContainer 和 window.reader.image 中
         var img = document.createElement('img')
         img.setAttribute('id', 'img' + i)
@@ -330,7 +330,7 @@ if (tagFontsize) {
 }
 
 // 标签翻译
-var translate = exReader.getAttribute('translate')|| "true"
+var translate = exReader.getAttribute('translate') || "true"
 if (eval(translate)) {
     window.reader.tag.dic = localStorage.getItem('tagDic')
     if (window.reader.tag.dic && !(eval(exReader.getAttribute('version')) < version)) {
@@ -347,44 +347,50 @@ if (eval(translate)) {
 }
 
 var preloadSize = eval(exReader.getAttribute('preload-size')) || 0
-if (preloadSize > 1 ) {
+// 设定多于一页的时候才加载
+if (preloadSize > 1) {
     let pagesBoxs = document.getElementsByClassName('ptb')[0]
     let pagesLinks = pagesBoxs.getElementsByTagName('a')
     let orignal_preview_grid = document.getElementById('gdt')
-
-    if (pagesLinks.length > 1 && window.location.href.indexOf('?p=') === -1 && pagesLinks.length-1 <= preloadSize ) {
-        for (let i = 1; i < pagesLinks.length-1; i++) {
-            let xhr = new XMLHttpRequest()
-            xhr.open('GET', pagesLinks[i].href,false)
-            xhr.onload = function(){
-                if (this.status === 200) {
-                    let hidden = document.body.appendChild(document.createElement('div'))
-                    hidden.innerHTML = this.responseText;document.getElementById
-                    let lst = hidden.getElementsByClassName('gdtl')
-                    for (let i = 0; lst.length>0; i++){
-                        orignal_preview_grid.appendChild(lst[0])
+    var xhrlist = new Array()
+    // 页数大于 1 && 当前网址没有'?p=' 
+    if (pagesLinks.length > 1 && window.location.href.indexOf('?p=') === -1 && pagesLinks.length - 1 <= preloadSize) {
+        for (let i = 1; i < pagesLinks.length - 1; i++) {
+            let p = new Promise(function () {
+                let xhr = new XMLHttpRequest()
+                xhr.open('GET', pagesLinks[i].href)
+                xhr.onload = function () {
+                    if (this.status === 200) {
+                        let hidden = document.body.appendChild(document.createElement('div'))
+                        hidden.innerHTML = this.responseText; document.getElementById
+                        let lst = hidden.getElementsByClassName('gdtl')
+                        for (let i = 0; lst.length > 0; i++) {
+                            orignal_preview_grid.appendChild(lst[0])
+                        }
+                        hidden.parentNode.removeChild(hidden);
                     }
-                    hidden.parentNode.removeChild(hidden);
                 }
+                xhr.send()
             }
-            xhr.send()
-            
+            )
+            xhrlist.push(p)
         }
     }
 }
 
 if (document.location.href.indexOf('https://exhentai.org/g/') > -1) {
-        // console.log('first')
-        document.body.scrollTop = 0
-        document.documentElement.scrollTop = 0
-        initStyleLink()
-        initImageStructure()
-        initToolBarStructure()
-        reframeWebpage()
-        for (var i = 0; i < window.reader.page.length; i++) {
-            loadImg(window.reader.page[i].url, i, true)
-        }
-    
+    // console.log('first')
+    document.body.scrollTop = 0
+    document.documentElement.scrollTop = 0
+    initStyleLink()
+    Promise.all(xhrlist).then(initImageStructure)
+    // initImageStructure()
+    initToolBarStructure()
+    reframeWebpage()
+    for (var i = 0; i < window.reader.page.length; i++) {
+        loadImg(window.reader.page[i].url, i, true)
+    }
+
 }
 
 window.onscroll = function () {
