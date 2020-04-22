@@ -346,31 +346,48 @@ if (eval(translate)) {
     }
 }
 
-var preloadSize = eval(exReader.getAttribute('preload-size')) || 0
-if (preloadSize > 1 ) {
-    let pagesBoxs = document.getElementsByClassName('ptb')[0]
-    let pagesLinks = pagesBoxs.getElementsByTagName('a')
-    let orignal_preview_grid = document.getElementById('gdt')
-
-    if (pagesLinks.length > 1 && window.location.href.indexOf('?p=') === -1 && pagesLinks.length-1 <= preloadSize ) {
-        for (let i = 1; i < pagesLinks.length-1; i++) {
-            let xhr = new XMLHttpRequest()
-            xhr.open('GET', pagesLinks[i].href,false)
-            xhr.onload = function(){
-                if (this.status === 200) {
-                    let hidden = document.body.appendChild(document.createElement('div'))
-                    hidden.innerHTML = this.responseText;document.getElementById
-                    let lst = hidden.getElementsByClassName('gdtl')
-                    for (let i = 0; lst.length>0; i++){
-                        orignal_preview_grid.appendChild(lst[0])
-                    }
-                    hidden.parentNode.removeChild(hidden);
-                }
+async function sequentialLoadingWrapper() {
+    
+    var preloadSize = eval(exReader.getAttribute('preload-size')) || 0
+    // 设定多于一页的时候才加载
+    if (preloadSize > 1) {
+        let pagesBoxs = document.getElementsByClassName('ptb')[0]
+        let pagesLinks = pagesBoxs.getElementsByTagName('a')
+        let orignal_preview_grid = document.getElementById('gdt')
+        // 页数大于 1 && 当前网址没有'?p=' && 预加载页数要>=所有页数
+        if (pagesLinks.length > 1 && window.location.href.indexOf('?p=') === -1 && pagesLinks.length - 1 <= preloadSize){
+            for (let i = 1; i < pagesLinks.length - 1; i++) {
+                await preloadpromise(pagesLinks[i].href, orignal_preview_grid)
             }
-            xhr.send()
-            
         }
     }
+    initImageStructure()
+    for (var i = 0; i < window.reader.page.length; i++) {
+        loadImg(window.reader.page[i].url, i, true)
+    }
+}
+    
+function preloadpromise(url, orignal_preview_grid) {
+    return new Promise((resolve, err) => {
+        let xhr = new XMLHttpRequest()
+        xhr.open('GET', url)
+        xhr.onload = function () {
+            if (this.status === 200) {
+                let hidden = document.body.appendChild(document.createElement('div'))
+                hidden.innerHTML = this.responseText;
+                let lst = hidden.getElementsByClassName('gdtl')
+                for (let i = 0; lst.length > 0; i++) {
+                    orignal_preview_grid.appendChild(lst[0])
+                }
+                hidden.parentNode.removeChild(hidden);
+                resolve(true)
+            } else {
+                err(this.statusText)
+            }
+        }
+        xhr.send()
+    }
+    )
 }
 
 if (document.location.href.indexOf('https://exhentai.org/g/') > -1) {
@@ -378,13 +395,9 @@ if (document.location.href.indexOf('https://exhentai.org/g/') > -1) {
         document.body.scrollTop = 0
         document.documentElement.scrollTop = 0
         initStyleLink()
-        initImageStructure()
         initToolBarStructure()
         reframeWebpage()
-        for (var i = 0; i < window.reader.page.length; i++) {
-            loadImg(window.reader.page[i].url, i, true)
-        }
-    
+        sequentialLoadingWrapper()
 }
 
 window.onscroll = function () {
