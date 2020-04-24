@@ -73,7 +73,7 @@ function loadImg(pageurl, i, first) {
             var img = document.getElementById('img' + i)
             if (first) {
                 var h = document.createElement('hr')
-                h.setAttribute('style', 'width:100%;height:8px;background-color:'+color+';margin:0px;')
+                h.setAttribute('style', 'width:100%;height:8px;background-color:' + color + ';margin:0px;')
                 img.parentElement.insertBefore(h, img)
             }
             img.setAttribute('src', imgUrl)
@@ -182,7 +182,7 @@ function initImageStructure() {
         window.reader.page[i] = {}
         window.reader.image[i] = {}
         window.reader.page[i].url = pics_links[i].href
-        
+
         // 生成 image dom, 加到 readerContainer 和 window.reader.image 中
         var img = document.createElement('img')
         img.setAttribute('id', 'img' + i)
@@ -209,6 +209,7 @@ function initImageStructure() {
 
 
 function initToolBarStructure() {
+    console.log("load initToolBarStructure")
     var bar = document.createElement('div')
     bar.id = 'toolBar'
     bar.style.opacity = 1
@@ -330,7 +331,7 @@ if (tagFontsize) {
 }
 
 // 标签翻译
-var translate = exReader.getAttribute('translate')|| "true"
+var translate = exReader.getAttribute('translate') || "true"
 if (eval(translate)) {
     window.reader.tag.dic = localStorage.getItem('tagDic')
     if (window.reader.tag.dic && !(eval(exReader.getAttribute('version')) < version)) {
@@ -345,9 +346,9 @@ if (eval(translate)) {
             }, 'jsonp')
     }
 }
-
+// ----------------new code --------------------------------------------
 async function sequentialLoadingWrapper() {
-    
+
     var preloadSize = eval(exReader.getAttribute('preload-size')) || 0
     // 设定多于一页的时候才加载
     if (preloadSize > 1) {
@@ -356,9 +357,14 @@ async function sequentialLoadingWrapper() {
         let orignal_preview_grid = document.getElementById('gdt')
         // 页数大于 1 && 当前网址没有'?p=' && 预加载页数要>=所有页数
         if (pagesLinks.length > 1 && window.location.href.indexOf('?p=') === -1 && pagesLinks.length - 1 <= preloadSize){
+            let a = new Array()
             for (let i = 1; i < pagesLinks.length - 1; i++) {
-                await preloadpromise(pagesLinks[i].href, orignal_preview_grid)
+                a.push(
+                loadpages(pagesLinks[i].href, orignal_preview_grid))
             }
+            (await Promise.all(a)).forEach((value) => {
+                orignal_preview_grid.appendChild(value)
+            })
         }
     }
     initImageStructure()
@@ -367,20 +373,22 @@ async function sequentialLoadingWrapper() {
     }
 }
     
-function preloadpromise(url, orignal_preview_grid) {
+function loadpages(url) {
     return new Promise((resolve, err) => {
         let xhr = new XMLHttpRequest()
+        console.log('!!!promise exec!!!')
         xhr.open('GET', url)
         xhr.onload = function () {
             if (this.status === 200) {
-                let hidden = document.body.appendChild(document.createElement('div'))
-                hidden.innerHTML = this.responseText;
-                let lst = hidden.getElementsByClassName('gdtl')
-                for (let i = 0; lst.length > 0; i++) {
-                    orignal_preview_grid.appendChild(lst[0])
-                }
-                hidden.parentNode.removeChild(hidden);
-                resolve(true)
+                console.log('!!!xhr load!!!')
+                let div = document.createElement('div')
+                this.responseText.match(/<div class="gdt[m|l]"(.*?)>(.*?)https:\/\/e[x|-]hentai\.org\/s\/(\w+)\/(\d+)-(\d+)(.*?)<\/div>/g).forEach(item => {
+                    let link = item.match(/https:\/\/e[x|-]hentai\.org\/s\/(\w+)\/(\d+)-(\d+)/)
+                    let hidden = document.createElement('a')
+                    hidden.setAttribute('href', link)
+                    div.appendChild(hidden)
+                })
+                resolve(div)
             } else {
                 err(this.statusText)
             }
@@ -390,14 +398,16 @@ function preloadpromise(url, orignal_preview_grid) {
     )
 }
 
+// ----------------new code --------------------------------------------
+
 if (document.location.href.indexOf('https://exhentai.org/g/') > -1) {
-        // console.log('first')
-        document.body.scrollTop = 0
-        document.documentElement.scrollTop = 0
-        initStyleLink()
-        initToolBarStructure()
-        reframeWebpage()
-        sequentialLoadingWrapper()
+    // console.log('first')
+    document.body.scrollTop = 0
+    document.documentElement.scrollTop = 0
+    initStyleLink()
+    initToolBarStructure()
+    reframeWebpage()
+    sequentialLoadingWrapper()
 }
 
 window.onscroll = function () {
